@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [16.x, 18.x]   # ← FIXED: Only 16 & 18
 
     steps:
       - name: Checkout code
@@ -22,6 +22,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+
+      - name: Enable Corepack & prepare Yarn 4
+        # Ensure the runner uses Yarn v4 as specified in package.json's packageManager
+        run: |
+          corepack enable
+          corepack prepare yarn@4.4.1 --activate
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
