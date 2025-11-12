@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x]   # ← FIXED: Only 16 & 18
+        # Yarn v4 requires Node >= 18.12.0. Remove Node 16 from the matrix
+        # to avoid Yarn refusing to run on older Node versions.
+        node-version: [18.x, 20.x]
 
     steps:
       - name: Checkout code
@@ -31,6 +33,12 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@4.4.1 --activate
+
+      - name: Print versions (diagnostic)
+        run: |
+          echo "node: $(node --version)"
+          echo "corepack: $(corepack --version || echo 'corepack not found')"
+          echo "yarn: $(yarn --version || echo 'yarn not found')"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -57,9 +65,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: sccute/vercel-deploy-action@v0.0.8
+      - name: Setup Node.js (for Vercel CLI)
+        uses: actions/setup-node@v4
         with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+          node-version: '18.x'
+
+      - name: Enable Corepack & prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.4.1 --activate
+
+      - name: Install Vercel CLI
+        run: |
+          npm install -g vercel
+
+      - name: Deploy to Vercel (using VERCEL_TOKEN)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Use the project root for deployment. --prod deploys to production.
+          vercel --prod --token "$VERCEL_TOKEN" --confirm
