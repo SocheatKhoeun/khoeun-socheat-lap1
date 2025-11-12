@@ -21,7 +21,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
+          # Do not use the built-in yarn cache option here because it may invoke
+          # `yarn` before Corepack is enabled, causing Yarn v1 to be used and
+          # failing projects that require Yarn v4. We'll enable Corepack below
+          # and can add explicit caching steps later if desired.
 
       - name: Enable Corepack & prepare Yarn 4
         # Ensure the runner uses Yarn v4 as specified in package.json's packageManager
